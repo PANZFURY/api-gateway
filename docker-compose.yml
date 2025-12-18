@@ -1,0 +1,12 @@
+services:
+  api-gateway:
+    build: .
+    container_name: api-gateway
+    ports:
+      - "8083:8080"
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
