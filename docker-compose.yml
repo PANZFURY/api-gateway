@@ -1,12 +1,105 @@
 services:
   api-gateway:
-    build: .
+    build: ../api-gateway
     container_name: api-gateway
     ports:
       - "8083:8080"
     networks:
       - backend
+    depends_on:
+      - auth-service
+      - user-service
+      - order-service
+
+  auth-service:
+    build: ../authentication-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auth-postgres:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: auth_pass
+      REDIS_HOST: redis
+    depends_on:
+      - auth-postgres
+      - redis
+    networks:
+      - backend
+
+  user-service:
+    build: ../user-service
+    container_name: user-service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-postgres:5432/user_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: user_pass
+    depends_on:
+      - user-postgres
+    networks:
+      - backend
+
+  order-service:
+    build: ../order-service
+    container_name: order-service
+    ports:
+      - "8082:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://order-postgres:5432/order_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: order_pass
+    depends_on:
+      - order-postgres
+    networks:
+      - backend
+
+  auth-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: auth_pass
+    volumes:
+      - auth-pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  user-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: user_pass
+    volumes:
+      - user-pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  order-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: order_pass
+    volumes:
+      - order-pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+volumes:
+  auth-pgdata:
+  user-pgdata:
+  order-pgdata:
 
 networks:
   backend:
-    external: true
+    driver: bridge
